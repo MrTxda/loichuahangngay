@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lời Chúa và Suy Niệm Hàng Ngày</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&display=swap');
+        body {
+            font-family: 'Merriweather', serif;
+            background-color: #f7f3e9;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+        }
+        .card {
+            background-color: #fff;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #6b46c1;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .btn-primary {
+            background-color: #6b46c1;
+            color: #fff;
+            padding: 0.75rem 1.5rem;
+            border-radius: 9999px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            background-color: #5534a6;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        /* Style for adjustable font size */
+        .content-text {
+            font-size: var(--font-size-base);
+        }
+    </style>
+</head>
+<body class="p-6 md:p-12 flex items-start justify-center min-h-screen">
+    <div class="container mx-auto">
+        <!-- Header -->
+        <header class="text-center mb-10">
+            <h1 class="text-4xl md:text-5xl font-bold text-indigo-800 mb-2">Lời Chúa và Suy Niệm Hàng Ngày</h1>
+            <p id="current-date" class="text-lg text-gray-600 font-normal"></p>
+        </header>
+
+        <!-- Main Content Section -->
+        <main class="grid gap-8">
+            <!-- Loading Indicator -->
+            <div id="loading-container" class="flex flex-col items-center justify-center p-8 text-center" style="display: none;">
+                <div class="loading-spinner"></div>
+                <p class="mt-4 text-gray-500 text-lg">Đang tìm Tin Mừng và suy niệm...</p>
+            </div>
+            
+            <!-- History Button Section -->
+            <section class="card rounded-2xl p-4 flex items-center justify-center">
+                <button id="show-history-button" class="btn-primary flex items-center justify-center space-x-2">
+                    <i class="fas fa-history"></i>
+                    <span>Xem Lịch Sử Suy Niệm</span>
+                </button>
+            </section>
+
+            <!-- Saved Reflections Section -->
+            <section id="history-container" class="card rounded-2xl p-6 md:p-8" style="display: none;">
+                <h2 class="text-3xl font-bold text-center text-indigo-700 mb-4">Lịch Sử Suy Niệm</h2>
+                <div id="history-list" class="space-y-4"></div>
+                <button id="back-button" class="btn-primary flex items-center justify-center space-x-2 mt-4">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>Quay Lại</span>
+                </button>
+            </section>
+
+            <!-- Gospel and Reflection Container -->
+            <div id="content-container" class="space-y-8" style="display: none;">
+                <!-- Reflection Section -->
+                <section class="card rounded-2xl p-6 md:p-8">
+                    <h2 class="text-3xl font-bold text-center text-indigo-700 mb-4">Bài Suy Niệm</h2>
+                    <div id="reflection-text" class="content-text text-gray-700 leading-relaxed text-base md:text-lg text-justify space-y-4"></div>
+                </section>
+
+                <!-- Audio Player Section - now located right below the reflection -->
+                <section class="card rounded-2xl p-6 md:p-8" id="audio-controls-section" style="display: none;">
+                    <div class="flex flex-col md:flex-row items-center justify-center mt-6 gap-4">
+                        <button id="tts-button" class="btn-primary flex items-center justify-center space-x-2">
+                            <i class="fas fa-volume-up"></i>
+                            <span>Nghe Bài Suy Niệm</span>
+                        </button>
+                        <div id="audio-loading" class="loading-spinner" style="display: none;"></div>
+                        <audio id="audio-player" class="w-full md:w-auto" controls style="display: none;"></audio>
+                    </div>
+                </section>
+
+                <!-- Gospel Section -->
+                <section class="card rounded-2xl p-6 md:p-8">
+                    <h2 class="text-3xl font-bold text-center text-indigo-700 mb-4">Tin Mừng Hàng Ngày</h2>
+                    <h3 id="gospel-title" class="content-text text-xl font-bold text-center text-gray-800 mb-4"></h3>
+                    <div id="gospel-text" class="content-text text-gray-700 leading-relaxed text-base md:text-lg text-justify space-y-4"></div>
+                </section>
+
+                <!-- New Prayer Generator Section -->
+                <section class="card rounded-2xl p-6 md:p-8">
+                    <h2 class="text-3xl font-bold text-center text-indigo-700 mb-4">Tạo Lời Cầu Nguyện Theo Ý Riêng</h2>
+                    <div class="space-y-4">
+                        <p class="text-gray-700 leading-relaxed">Hãy nhập ý nguyện của bạn vào đây (ví dụ: con xin cầu nguyện cho gia đình, xin ơn bình an cho một người bạn, hay tạ ơn vì một ngày tốt lành).</p>
+                        <textarea id="prayer-prompt" class="w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" rows="4" placeholder="Nhập ý nguyện của bạn..."></textarea>
+                        <button id="generate-prayer-button" class="btn-primary flex items-center justify-center space-x-2 w-full">
+                            <i class="fas fa-magic"></i>
+                            <span>Tạo Lời Cầu Nguyện ✨</span>
+                        </button>
+                        <div id="prayer-loading" class="flex items-center justify-center" style="display: none;">
+                            <div class="loading-spinner"></div>
+                            <span class="ml-4 text-gray-500">Đang tạo lời cầu nguyện...</span>
+                        </div>
+                    </div>
+                    <div id="generated-prayer-container" class="mt-6 p-4 bg-indigo-50 rounded-lg border-l-4 border-indigo-500" style="display: none;">
+                        <h3 class="text-xl font-bold text-indigo-800 mb-2">Lời Cầu Nguyện</h3>
+                        <div id="generated-prayer-text" class="content-text text-gray-800 leading-relaxed text-justify"></div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, query, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global variables provided by the Canvas environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        
+        let userId;
+
+        // Khóa API của Google được bạn cung cấp.
+        const apiKey = "AIzaSyAjG-XSp5lor3_qkfFa6YGrW5sH_f43AU4";
+        const apiUrlText = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+        const apiUrlAudio = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
+
+        // Global instances and variables
+        const loadingContainer = document.getElementById('loading-container');
+        const contentContainer = document.getElementById('content-container');
+        const audioControlsSection = document.getElementById('audio-controls-section');
+        const gospelTitleEl = document.getElementById('gospel-title');
+        const gospelTextEl = document.getElementById('gospel-text');
+        const reflectionTextEl = document.getElementById('reflection-text');
+        const ttsButton = document.getElementById('tts-button');
+        const audioPlayer = document.getElementById('audio-player');
+        const audioLoading = document.getElementById('audio-loading');
+        const prayerPromptEl = document.getElementById('prayer-prompt');
+        const generatePrayerButton = document.getElementById('generate-prayer-button');
+        const prayerLoadingEl = document.getElementById('prayer-loading');
+        const generatedPrayerContainer = document.getElementById('generated-prayer-container');
+        const generatedPrayerTextEl = document.getElementById('generated-prayer-text');
+        const showHistoryButton = document.getElementById('show-history-button');
+        const historyContainer = document.getElementById('history-container');
+        const historyListEl = document.getElementById('history-list');
+        const backButton = document.getElementById('back-button');
+        
+        // Cập nhật ngày tháng hiện tại theo GMT+7
+        function updateDate() {
+            const now = new Date();
+            const options = {
+                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+                timeZone: 'Asia/Ho_Chi_Minh'
+            };
+            const formatter = new Intl.DateTimeFormat('vi-VN', options);
+            document.getElementById('current-date').textContent = `Hôm nay là: ${formatter.format(now)}`;
+        }
+
+        // Chuyển đổi base64 thành ArrayBuffer
+        function base64ToArrayBuffer(base64) {
+            const binaryString = atob(base64);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+
+        // Chuyển PCM16 bit raw audio data sang định dạng WAV blob
+        function pcmToWav(pcmData, sampleRate) {
+            const numChannels = 1;
+            const bytesPerSample = 2;
+            const bitDepth = 16;
+            const buffer = new ArrayBuffer(44 + pcmData.length * bytesPerSample);
+            const view = new DataView(buffer);
+
+            // Viết header WAV
+            writeString(view, 0, 'RIFF'); // ChunkID
+            view.setUint32(4, 36 + pcmData.length * bytesPerSample, true); // ChunkSize
+            writeString(view, 8, 'WAVE'); // Format
+            writeString(view, 12, 'fmt '); // Subchunk1ID
+            view.setUint32(16, 16, true); // Subchunk1Size
+            view.setUint16(20, 1, true); // AudioFormat (1=PCM)
+            view.setUint16(22, numChannels, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * numChannels * bytesPerSample, true); // ByteRate
+            view.setUint16(32, numChannels * bytesPerSample, true); // BlockAlign
+            view.setUint16(34, bitDepth, true);
+            writeString(view, 36, 'data'); // Subchunk2ID
+            view.setUint32(40, pcmData.length * bytesPerSample, true); // Subchunk2Size
+
+            // Viết dữ liệu PCM
+            let offset = 44;
+            for (let i = 0; i < pcmData.length; i++) {
+                view.setInt16(offset, pcmData[i], true);
+                offset += 2;
+            }
+
+            return new Blob([buffer], { type: 'audio/wav' });
+
+            function writeString(view, offset, str) {
+                for (let i = 0; i < str.length; i++) {
+                    view.setUint8(offset + i, str.charCodeAt(i));
+                }
+            }
+        }
+        
+        // Hàm fetch với cơ chế exponential backoff để xử lý lỗi mạng
+        async function fetchWithRetry(url, options, retries = 3, delay = 1000) {
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(url, options);
+                    if (response.ok) {
+                        return response;
+                    } else if (response.status === 429) {
+                        console.warn(`Throttled. Thử lại sau ${delay}ms...`);
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        delay *= 2;
+                    } else {
+                        console.error(`Lỗi API: ${response.status} ${response.statusText}`);
+                        throw new Error(`API error: ${response.statusText}`);
+                    }
+                } catch (error) {
+                    if (i === retries - 1) throw error;
+                    console.warn(`Lỗi mạng. Thử lại lần ${i + 1} sau ${delay}ms...`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    delay *= 2;
+                }
+            }
+            throw new Error("Tất cả các lần thử fetch đều thất bại.");
+        }
+
+        // Hiển thị nội dung
+        function displayContent(data) {
+            gospelTitleEl.textContent = data.gospel_title || "Không có tiêu đề Tin Mừng";
+            gospelTextEl.innerHTML = (data.gospel_text || "Không có nội dung Tin Mừng.").replace(/\n/g, '<br>');
+            reflectionTextEl.innerHTML = `<h3>${data.reflection_title || "Bài Suy Niệm"}</h3>` + (data.reflection_text || "Không có bài suy niệm.").replace(/\n/g, '<br><br>');
+            
+            loadingContainer.style.display = 'none';
+            contentContainer.style.display = 'grid';
+            audioControlsSection.style.display = 'block';
+            historyContainer.style.display = 'none';
+        }
+
+        // Tải Tin Mừng và suy niệm (từ Firestore hoặc API)
+        async function fetchDailyContent() {
+            loadingContainer.style.display = 'flex';
+            contentContainer.style.display = 'none';
+            audioControlsSection.style.display = 'none';
+            historyContainer.style.display = 'none';
+            generatedPrayerContainer.style.display = 'none';
+            
+            const today = new Date().toISOString().slice(0, 10);
+            const docRef = doc(db, `/artifacts/${appId}/users/${userId}/daily_reflections`, today);
+
+            try {
+                // Bước 1: Kiểm tra xem đã có bài suy niệm cho ngày hôm nay trong Firestore chưa
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    console.log("Tải bài suy niệm đã lưu...");
+                    displayContent(docSnap.data());
+                    return;
+                }
+                
+                // Bước 2: Nếu chưa có, tạo bài mới từ Gemini API
+                console.log("Tạo bài suy niệm mới...");
+                const fullPrompt = `Bạn là một linh mục. Hôm nay là ngày ${new Date().toLocaleDateString('vi-VN')}. Hãy tìm và cung cấp Tin Mừng của ngày hôm nay, sau đó viết một bài giảng chi tiết và sâu sắc (khoảng 2000 từ) dựa trên đoạn Tin Mừng đó. Bài viết cần có bố cục khoa học, rõ ràng với các mục sau:
+                1. Tiêu đề: Tóm tắt chủ đề chính.
+                2. Lời mở đầu: Giới thiệu ngữ cảnh Tin Mừng.
+                3. Giải thích Lời Chúa: Phân tích ý nghĩa từng câu.
+                4. Chiêm nghiệm Lời Chúa: Liên kết Tin Mừng với đời sống tâm linh.
+                5. Thực hành Lời Chúa: Đưa ra lời khuyên thiết thực.
+                6. Lời nguyện: Một lời cầu nguyện kết thúc ngắn gọn.
+                Trả lời dưới dạng JSON với bốn trường: "gospel_title" (tiêu đề Tin Mừng), "gospel_text" (nội dung Tin Mừng), "reflection_title" (Tiêu đề bài suy niệm), và "reflection_text" (nội dung bài suy niệm).`;
+                
+                const payload = {
+                    contents: [{ parts: [{ text: fullPrompt }] }],
+                    generationConfig: {
+                        responseMimeType: "application/json",
+                        responseSchema: {
+                            type: "OBJECT",
+                            properties: {
+                                "gospel_title": { "type": "STRING" },
+                                "gospel_text": { "type": "STRING" },
+                                "reflection_title": { "type": "STRING" },
+                                "reflection_text": { "type": "STRING" }
+                            }
+                        }
+                    }
+                };
+
+                let response = await fetchWithRetry(apiUrlText, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const result = await response.json();
+                
+                if (!result || !result.candidates || !result.candidates[0] || !result.candidates[0].content || !result.candidates[0].content.parts || !result.candidates[0].content.parts[0] || !result.candidates[0].content.parts[0].text) {
+                    console.error("Dữ liệu từ API không có định dạng mong muốn.");
+                    throw new Error("Dữ liệu từ API không hợp lệ.");
+                }
+
+                const content = JSON.parse(result.candidates[0].content.parts[0].text);
+                
+                // Bước 3: Hiển thị và lưu bài mới vào Firestore
+                displayContent(content);
+                await setDoc(docRef, { ...content, createdAt: serverTimestamp() });
+
+            } catch (error) {
+                console.error("Lỗi khi lấy dữ liệu:", error);
+                loadingContainer.innerHTML = '<p class="text-red-500">Xin lỗi, đã xảy ra lỗi khi lấy nội dung. Vui lòng kiểm tra lại API Key hoặc thử lại sau.</p>';
+            }
+        }
+
+        // Tạo âm thanh từ văn bản
+        async function generateAudio() {
+            audioPlayer.style.display = 'none';
+            ttsButton.disabled = true;
+            ttsButton.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Đang tải...`;
+            audioLoading.style.display = 'block';
+
+            try {
+                const textToSpeak = reflectionTextEl.innerText;
+                const payload = {
+                    contents: [{
+                        parts: [{ text: `Đọc với giọng đọc trang nghiêm, rõ ràng, trầm bổng, ấm áp, Truyền cảm và sâu lắng: ${textToSpeak}` }]
+                    }],
+                    generationConfig: {
+                        responseModalities: ["AUDIO"],
+                        speechConfig: {
+                            voiceConfig: {
+                                prebuiltVoiceConfig: { voiceName: "Charon" } // Giọng đọc trang trọng
+                            }
+                        }
+                    },
+                    model: "gemini-2.5-flash-preview-tts"
+                };
+
+                const response = await fetchWithRetry(apiUrlAudio, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+                const part = result?.candidates?.[0]?.content?.parts?.[0];
+                const audioData = part?.inlineData?.data;
+                const mimeType = part?.inlineData?.mimeType;
+
+                if (audioData && mimeType && mimeType.startsWith("audio/")) {
+                    const sampleRateMatch = mimeType.match(/rate=(\d+)/);
+                    const sampleRate = sampleRateMatch ? parseInt(sampleRateMatch[1], 10) : 16000;
+                    const pcmData = new Int16Array(base64ToArrayBuffer(audioData));
+                    const wavBlob = pcmToWav(pcmData, sampleRate);
+                    const audioUrl = URL.createObjectURL(wavBlob);
+                    
+                    audioPlayer.src = audioUrl;
+                    audioPlayer.style.display = 'block';
+                    audioPlayer.play();
+                    ttsButton.innerHTML = `<i class="fas fa-volume-up"></i> Nghe Bài Suy Niệm`;
+                } else {
+                    console.error("Không nhận được dữ liệu âm thanh hợp lệ.");
+                    ttsButton.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Lỗi phát âm thanh';
+                }
+            } catch (error) {
+                console.error("Lỗi khi tạo âm thanh:", error);
+                ttsButton.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Lỗi phát âm thanh';
+            } finally {
+                ttsButton.disabled = false;
+                audioLoading.style.display = 'none';
+            }
+        }
+        
+        // Hàm mới để tạo lời cầu nguyện
+        async function generatePrayer() {
+            const userPrompt = prayerPromptEl.value;
+            const gospelText = gospelTextEl.innerText;
+            
+            if (!userPrompt.trim() || !gospelText.trim()) {
+                // Using a simple alert for this case as it's a minor validation
+                alert('Vui lòng nhập ý nguyện và đảm bảo Tin Mừng đã được tải.');
+                return;
+            }
+
+            // Hiển thị trạng thái tải
+            generatedPrayerContainer.style.display = 'none';
+            prayerLoadingEl.style.display = 'flex';
+            generatePrayerButton.disabled = true;
+
+            try {
+                const prayerPrompt = `Bạn là một linh mục. Dựa trên ý nguyện sau: "${userPrompt}", và đoạn Tin Mừng của ngày hôm nay: "${gospelText}", hãy viết một lời cầu nguyện ngắn, trang trọng và đầy ý nghĩa.`;
+                
+                const payload = {
+                    contents: [{ parts: [{ text: prayerPrompt }] }]
+                };
+
+                const response = await fetchWithRetry(apiUrlText, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const result = await response.json();
+                
+                if (!result || !result.candidates || !result.candidates[0] || !result.candidates[0].content || !result.candidates[0].content.parts || !result.candidates[0].content.parts[0] || !result.candidates[0].content.parts[0].text) {
+                    throw new Error("Không nhận được phản hồi từ API.");
+                }
+                
+                generatedPrayerTextEl.innerHTML = result.candidates[0].content.parts[0].text.replace(/\n/g, '<br><br>');
+                generatedPrayerContainer.style.display = 'block';
+
+            } catch (error) {
+                console.error("Lỗi khi tạo lời cầu nguyện:", error);
+                generatedPrayerTextEl.innerHTML = "Xin lỗi, đã xảy ra lỗi khi tạo lời cầu nguyện. Vui lòng thử lại.";
+                generatedPrayerContainer.style.display = 'block';
+            } finally {
+                prayerLoadingEl.style.display = 'none';
+                generatePrayerButton.disabled = false;
+            }
+        }
+
+        // Tải danh sách các bài suy niệm đã lưu
+        async function loadSavedReflections() {
+            contentContainer.style.display = 'none';
+            audioControlsSection.style.display = 'none';
+            loadingContainer.style.display = 'flex';
+            historyContainer.style.display = 'none';
+
+            try {
+                const q = query(collection(db, `/artifacts/${appId}/users/${userId}/daily_reflections`));
+                const unsubscribe = onSnapshot(q, (snapshot) => {
+                    historyListEl.innerHTML = ''; // Clear previous list
+                    snapshot.forEach((doc) => {
+                        const data = doc.data();
+                        const date = doc.id;
+                        const listItem = document.createElement('div');
+                        listItem.className = 'p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-100 transition-colors duration-200';
+                        listItem.innerHTML = `<h4 class="font-bold text-lg">${date}</h4><p class="text-sm text-gray-600">${data.reflection_title}</p>`;
+                        listItem.onclick = () => displayContent(data);
+                        historyListEl.appendChild(listItem);
+                    });
+                    loadingContainer.style.display = 'none';
+                    historyContainer.style.display = 'block';
+                });
+                // Unsubscribe listener when moving away, or for memory management
+                window.onpopstate = () => unsubscribe();
+            } catch (error) {
+                console.error("Lỗi khi tải lịch sử:", error);
+                loadingContainer.innerHTML = '<p class="text-red-500">Lỗi khi tải lịch sử suy niệm. Vui lòng thử lại.</p>';
+            }
+        }
+        
+        // Bắt đầu ứng dụng
+        async function initializeAppLogic() {
+            // Sign in the user
+            if (initialAuthToken) {
+                try {
+                    const userCredential = await signInWithCustomToken(auth, initialAuthToken);
+                    userId = userCredential.user.uid;
+                    console.log("Đăng nhập thành công với token tùy chỉnh:", userId);
+                } catch (error) {
+                    console.error("Lỗi đăng nhập với token tùy chỉnh:", error);
+                    const userCredential = await signInAnonymously(auth);
+                    userId = userCredential.user.uid;
+                    console.log("Đăng nhập ẩn danh thành công:", userId);
+                }
+            } else {
+                const userCredential = await signInAnonymously(auth);
+                userId = userCredential.user.uid;
+                console.log("Đăng nhập ẩn danh thành công:", userId);
+            }
+            
+            updateDate();
+            fetchDailyContent();
+
+            // Add event listeners for new features
+            ttsButton.addEventListener('click', generateAudio);
+            generatePrayerButton.addEventListener('click', generatePrayer);
+            showHistoryButton.addEventListener('click', loadSavedReflections);
+            backButton.addEventListener('click', fetchDailyContent);
+        }
+
+        window.onload = initializeAppLogic;
+    </script>
+</body>
+</html>
